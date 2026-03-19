@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { GuestTableClient } from '@/components/guests/GuestTableClient'
+import { AddGuestButton } from '@/components/guests/AddGuestButton'
 import { decrypt } from '@/lib/crypto'
 
 export const metadata: Metadata = { title: 'Guests' }
@@ -11,6 +12,7 @@ interface SearchParams {
   eventId?: string
   rsvpStatus?: string
   page?: string
+  addGuest?: string
 }
 
 const RSVP_STATUS_STYLES: Record<string, string> = {
@@ -83,12 +85,7 @@ export default async function GuestsPage({
           </h1>
         </div>
         <div className="mt-10">
-          <span
-            className="border border-foreground px-6 py-2.5 text-xs tracking-[0.15em] uppercase text-muted-foreground cursor-default"
-            style={{ fontFamily: 'Courier New, monospace' }}
-          >
-            ( ADD GUEST )
-          </span>
+          <AddGuestButton />
         </div>
       </div>
 
@@ -123,6 +120,7 @@ export default async function GuestsPage({
         page={page}
         limit={limit}
         eventId={params.eventId}
+        triggerAdd={params.addGuest === '1'}
       />
     </div>
   )

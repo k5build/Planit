@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   const userId = session.user.id
   const isAdmin = session.user.role === 'SUPER_ADMIN'
 
-  const [totalEvents, upcomingEvents, totalGuests, recentEvents] = await Promise.all([
+  const [totalEvents, upcomingEvents, totalGuests, confirmedGuests, recentEvents] = await Promise.all([
     db.event.count({
       where: isAdmin ? {} : { OR: [{ plannerId: userId }, { clientId: userId }] },
     }),
@@ -30,6 +30,14 @@ export default async function DashboardPage() {
       where: isAdmin
         ? {}
         : { event: { OR: [{ plannerId: userId }, { clientId: userId }] } },
+    }),
+    db.guest.count({
+      where: {
+        rsvpStatus: 'CONFIRMED',
+        ...(isAdmin
+          ? {}
+          : { event: { OR: [{ plannerId: userId }, { clientId: userId }] } }),
+      },
     }),
     db.event.findMany({
       where: isAdmin ? {} : { OR: [{ plannerId: userId }, { clientId: userId }] },
@@ -79,7 +87,7 @@ export default async function DashboardPage() {
           { value: totalEvents, label: 'EVENTS' },
           { value: upcomingEvents, label: 'UPCOMING' },
           { value: totalGuests, label: 'GUESTS' },
-          { value: `${upcomingEvents}`, label: 'CONFIRMED' },
+          { value: confirmedGuests, label: 'CONFIRMED' },
         ].map((stat, i) => (
           <div
             key={stat.label}

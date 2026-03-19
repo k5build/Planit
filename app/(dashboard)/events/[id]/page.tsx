@@ -3,20 +3,9 @@ import { db } from '@/lib/db'
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { StatusBadge } from '@/components/ui/Badge'
-import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
-import {
-  CalendarDays,
-  MapPin,
-  Users,
-  DollarSign,
-  FileText,
-  MessageSquare,
-  ArrowLeft,
-  Edit,
-  CheckSquare,
-} from 'lucide-react'
+import { CalendarDays, MapPin } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -76,177 +65,218 @@ export default async function EventDetailPage({ params }: PageProps) {
     where: { eventId: id, status: { in: ['TODO', 'IN_PROGRESS'] } },
   })
 
+  const mono = { fontFamily: 'Courier New, monospace' } as const
+  const display = { fontFamily: 'Cormorant Garamond, Georgia, serif' } as const
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start gap-4">
-        <Link
-          href="/dashboard/events"
-          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-interactive mt-0.5"
-          aria-label="Back to events"
+    <div>
+      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-6">
+          <Link
+            href="/dashboard/events"
+            className="text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-interactive flex items-center gap-2"
+            style={mono}
+          >
+            ← EVENTS
+          </Link>
+          {(isAdmin || event.plannerId === session.user.id) && (
+            <Link
+              href={`/dashboard/events/${id}/edit`}
+              className="text-xs tracking-[0.15em] uppercase border border-border px-5 py-2 text-muted-foreground hover:border-foreground hover:text-foreground transition-all duration-200"
+              style={mono}
+            >
+              ( EDIT )
+            </Link>
+          )}
+        </div>
+
+        <p
+          className="text-xs tracking-[0.2em] uppercase text-primary mb-3"
+          style={mono}
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        </Link>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-foreground truncate">{event.title}</h1>
+          {event.type.replace('_', ' ')}
+        </p>
+
+        <div className="flex items-start gap-4 flex-wrap">
+          <h1
+            className="text-5xl sm:text-6xl font-light italic text-foreground"
+            style={display}
+          >
+            {event.title}
+          </h1>
+          <div className="mt-3">
             <StatusBadge status={event.status} />
           </div>
-          <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-3 flex-wrap">
-            <span className="flex items-center gap-1">
-              <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-              {formatDate(event.startDate)}
-            </span>
-            {event.venue && (
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                {event.venue.name}
-              </span>
-            )}
-            <span className="capitalize">{event.type.toLowerCase().replace('_', ' ')}</span>
-          </p>
         </div>
-        {(isAdmin || event.plannerId === session.user.id) && (
-          <Link
-            href={`/dashboard/events/${id}/edit`}
-            className="flex items-center gap-2 h-9 px-4 rounded-xl text-sm font-semibold bg-secondary border border-border hover:bg-secondary/80 text-foreground transition-interactive"
-          >
-            <Edit className="h-4 w-4" aria-hidden="true" />
-            Edit
-          </Link>
-        )}
+
+        <div className="flex items-center gap-5 mt-4 flex-wrap">
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground" style={mono}>
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+            {formatDate(event.startDate)}
+          </span>
+          {event.venue && (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground" style={mono}>
+              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+              {event.venue.name}
+              {event.venue.city ? `, ${event.venue.city}` : ''}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <hr className="border-border mb-0" />
+
+      {/* ── STATS ROW ──────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 mb-0">
         {[
-          { label: 'Guests', value: event._count.guests, sub: `${confirmedGuests} confirmed`, icon: <Users className="h-4 w-4" /> },
-          { label: 'Budget', value: formatCurrency(budgetSummary._sum.planned ?? 0, event.currency), sub: `${formatCurrency(budgetSummary._sum.actual ?? 0, event.currency)} spent`, icon: <DollarSign className="h-4 w-4" /> },
-          { label: 'Tasks', value: event._count.tasks, sub: `${pendingTasks} pending`, icon: <CheckSquare className="h-4 w-4" /> },
-          { label: 'Vendors', value: event.vendors.length, sub: 'Assigned', icon: <Users className="h-4 w-4" /> },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-card border border-border rounded-2xl p-4 flex items-start gap-3">
-            <div className="shrink-0 p-2 bg-primary/8 rounded-xl text-primary" aria-hidden="true">
-              {stat.icon}
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{stat.label}</p>
-              <p className="text-xl font-bold text-foreground mt-0.5">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.sub}</p>
-            </div>
+          { value: event._count.guests, label: 'GUESTS', sub: `${confirmedGuests} confirmed` },
+          { value: formatCurrency(budgetSummary._sum.planned ?? 0, event.currency), label: 'BUDGET', sub: `${formatCurrency(budgetSummary._sum.actual ?? 0, event.currency)} spent` },
+          { value: event._count.tasks, label: 'TASKS', sub: `${pendingTasks} pending` },
+          { value: event.vendors.length, label: 'VENDORS', sub: 'assigned' },
+        ].map((stat, i) => (
+          <div
+            key={stat.label}
+            className="py-8 px-6"
+            style={{ borderRight: i < 3 ? '1px solid var(--border)' : undefined, borderBottom: '1px solid var(--border)' }}
+          >
+            <p
+              className="text-4xl sm:text-5xl font-light text-foreground mb-1"
+              style={display}
+            >
+              {stat.value}
+            </p>
+            <p className="text-xs tracking-[0.18em] uppercase text-muted-foreground" style={mono}>
+              {stat.label}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1" style={mono}>
+              {stat.sub}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Details Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <hr className="border-border mb-12" />
+
+      {/* ── DETAILS GRID ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border mb-12">
         {/* Overview */}
-        <Card className="lg:col-span-2" padding="md">
-          <CardHeader>
-            <CardTitle>Overview</CardTitle>
-          </CardHeader>
-          <div className="space-y-3 text-sm">
-            {event.description && (
-              <p className="text-muted-foreground leading-relaxed">{event.description}</p>
-            )}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-2">
-              {[
-                { label: 'Start Date', value: formatDateTime(event.startDate) },
-                { label: 'End Date', value: formatDateTime(event.endDate) },
-                { label: 'Visibility', value: event.visibility },
-                { label: 'Timezone', value: event.timezone },
-                { label: 'Capacity', value: event.maxCapacity ? String(event.maxCapacity) : 'Unlimited' },
-                { label: 'Currency', value: event.currency },
-              ].map(({ label, value }) => (
-                <div key={label}>
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className="font-medium text-foreground mt-0.5">{value}</p>
-                </div>
-              ))}
-            </div>
+        <div className="lg:col-span-2 p-7" style={{ borderRight: '1px solid var(--border)' }}>
+          <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground mb-6" style={mono}>
+            OVERVIEW
+          </p>
+          {event.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              {event.description}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+            {[
+              { label: 'START DATE', value: formatDateTime(event.startDate) },
+              { label: 'END DATE', value: formatDateTime(event.endDate) },
+              { label: 'VISIBILITY', value: event.visibility },
+              { label: 'TIMEZONE', value: event.timezone },
+              { label: 'CAPACITY', value: event.maxCapacity ? String(event.maxCapacity) : 'Unlimited' },
+              { label: 'CURRENCY', value: event.currency },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p className="text-xs tracking-[0.12em] uppercase text-muted-foreground mb-1" style={mono}>
+                  {label}
+                </p>
+                <p className="text-sm text-foreground">{value}</p>
+              </div>
+            ))}
           </div>
-        </Card>
+        </div>
 
         {/* People */}
-        <Card padding="md">
-          <CardHeader>
-            <CardTitle>People</CardTitle>
-          </CardHeader>
-          <div className="space-y-3 text-sm">
+        <div className="p-7">
+          <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground mb-6" style={mono}>
+            PEOPLE
+          </p>
+          <div className="space-y-5">
             <div>
-              <p className="text-xs text-muted-foreground">Planner</p>
-              <p className="font-medium text-foreground mt-0.5">{event.planner.email}</p>
+              <p className="text-xs tracking-[0.12em] uppercase text-muted-foreground mb-1" style={mono}>PLANNER</p>
+              <p className="text-sm text-foreground">{event.planner.email}</p>
             </div>
             {event.client && (
               <div>
-                <p className="text-xs text-muted-foreground">Client</p>
-                <p className="font-medium text-foreground mt-0.5">{event.client.email}</p>
+                <p className="text-xs tracking-[0.12em] uppercase text-muted-foreground mb-1" style={mono}>CLIENT</p>
+                <p className="text-sm text-foreground">{event.client.email}</p>
               </div>
             )}
             {event.venue && (
               <div>
-                <p className="text-xs text-muted-foreground">Venue</p>
-                <p className="font-medium text-foreground mt-0.5">{event.venue.name}</p>
+                <p className="text-xs tracking-[0.12em] uppercase text-muted-foreground mb-1" style={mono}>VENUE</p>
+                <p className="text-sm text-foreground">{event.venue.name}</p>
                 {event.venue.city && (
-                  <p className="text-xs text-muted-foreground">{event.venue.city}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{event.venue.city}</p>
                 )}
               </div>
             )}
           </div>
-        </Card>
+        </div>
       </div>
 
-      {/* Vendors */}
+      {/* ── VENDORS TABLE ──────────────────────────────────────────────────── */}
       {event.vendors.length > 0 && (
-        <Card padding="none">
-          <CardHeader className="px-5 pt-5 pb-0">
-            <CardTitle>Assigned Vendors</CardTitle>
-          </CardHeader>
-          <div className="mt-4">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-secondary/30">Vendor</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-secondary/30 hidden sm:table-cell">Category</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-secondary/30 hidden md:table-cell">Role</th>
+        <div className="mb-12">
+          <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground mb-6" style={mono}>
+            ASSIGNED VENDORS
+          </p>
+          <table className="w-full text-sm border border-border">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="px-5 py-3 text-left text-xs tracking-[0.12em] uppercase text-muted-foreground font-normal" style={mono}>Vendor</th>
+                <th className="px-5 py-3 text-left text-xs tracking-[0.12em] uppercase text-muted-foreground font-normal hidden sm:table-cell" style={mono}>Category</th>
+                <th className="px-5 py-3 text-left text-xs tracking-[0.12em] uppercase text-muted-foreground font-normal hidden md:table-cell" style={mono}>Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              {event.vendors.map((ev) => (
+                <tr key={ev.id} className="border-b border-border/50 hover:bg-muted/20 transition-interactive">
+                  <td className="px-5 py-3.5 text-foreground">{ev.vendor.name}</td>
+                  <td className="px-5 py-3.5 text-xs text-muted-foreground hidden sm:table-cell" style={mono}>
+                    {ev.vendor.category.replace('_', ' ')}
+                  </td>
+                  <td className="px-5 py-3.5 text-xs text-muted-foreground hidden md:table-cell">
+                    {ev.role ?? '—'}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {event.vendors.map((ev) => (
-                  <tr key={ev.id} className="border-b border-border/50 hover:bg-secondary/20 transition-interactive">
-                    <td className="px-5 py-3.5 font-medium text-foreground">{ev.vendor.name}</td>
-                    <td className="px-5 py-3.5 text-xs text-muted-foreground hidden sm:table-cell">
-                      {ev.vendor.category.replace('_', ' ')}
-                    </td>
-                    <td className="px-5 py-3.5 text-xs text-muted-foreground hidden md:table-cell">
-                      {ev.role ?? '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {/* Module Links */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <hr className="border-border mb-6" />
+
+      {/* ── MODULE NAVIGATION ──────────────────────────────────────────────── */}
+      <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground mb-6" style={mono}>
+        NAVIGATE
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 border border-border">
         {[
-          { label: 'Guests', count: event._count.guests, href: `/dashboard/guests?eventId=${id}`, icon: <Users className="h-4 w-4" /> },
-          { label: 'Budget', count: event._count.budgetItems, href: `/dashboard/budget?eventId=${id}`, icon: <DollarSign className="h-4 w-4" /> },
-          { label: 'Documents', count: event._count.documents, href: `/dashboard/events/${id}/documents`, icon: <FileText className="h-4 w-4" /> },
-          { label: 'Messages', count: event._count.messages, href: `/dashboard/events/${id}/messages`, icon: <MessageSquare className="h-4 w-4" /> },
-        ].map((module) => (
+          { label: 'GUESTS',    count: event._count.guests,      href: `/dashboard/guests?eventId=${id}` },
+          { label: 'BUDGET',    count: event._count.budgetItems, href: `/dashboard/budget?eventId=${id}` },
+          { label: 'DOCUMENTS', count: event._count.documents,   href: `/dashboard/events/${id}/documents` },
+          { label: 'MESSAGES',  count: event._count.messages,    href: `/dashboard/events/${id}/messages` },
+        ].map((module, i) => (
           <Link
             key={module.label}
             href={module.href}
-            className="group bg-card border border-border rounded-2xl p-4 text-center hover:border-primary/30 transition-interactive"
+            className="block py-6 px-5 group hover:bg-muted/20 transition-interactive"
+            style={{ borderRight: i < 3 ? '1px solid var(--border)' : undefined }}
           >
-            <div className="flex justify-center mb-2 text-muted-foreground group-hover:text-primary transition-interactive" aria-hidden="true">
-              {module.icon}
-            </div>
-            <p className="text-xl font-bold text-foreground">{module.count}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{module.label}</p>
+            <p
+              className="text-3xl font-light text-foreground mb-1 group-hover:text-primary transition-interactive"
+              style={display}
+            >
+              {module.count}
+            </p>
+            <p className="text-xs tracking-[0.15em] uppercase text-muted-foreground group-hover:text-primary transition-interactive" style={mono}>
+              {module.label} →
+            </p>
           </Link>
         ))}
       </div>

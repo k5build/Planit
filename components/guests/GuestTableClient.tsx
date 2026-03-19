@@ -32,6 +32,8 @@ interface GuestTableClientProps {
   page: number
   limit: number
   eventId?: string
+  /** When true, open the add-guest modal immediately */
+  triggerAdd?: boolean
 }
 
 const RSVP_OPTIONS = [
@@ -42,10 +44,10 @@ const RSVP_OPTIONS = [
   { value: 'NO_SHOW', label: 'No Show' },
 ]
 
-export function GuestTableClient({ guests, total, page, limit, eventId }: GuestTableClientProps) {
+export function GuestTableClient({ guests, total, page, limit, eventId, triggerAdd }: GuestTableClientProps) {
   const router = useRouter()
   const [search, setSearch] = useState('')
-  const [addOpen, setAddOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(triggerAdd ?? false)
   const [serverError, setServerError] = useState('')
 
   const {
@@ -100,7 +102,7 @@ export function GuestTableClient({ guests, total, page, limit, eventId }: GuestT
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search guests..."
-            className="w-full pl-9 pr-4 h-9 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/55 focus:outline-none focus:ring-2 focus:ring-ring/20"
+            className="w-full pl-9 pr-4 h-9 border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground/55 focus:outline-none focus:border-foreground transition-interactive"
             aria-label="Search guests"
           />
         </div>
@@ -120,11 +122,11 @@ export function GuestTableClient({ guests, total, page, limit, eventId }: GuestT
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+      <div className="border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-secondary/30">
+              <tr className="border-b border-border border-t border-t-border">
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden sm:table-cell">Email</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">RSVP</th>

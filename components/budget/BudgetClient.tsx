@@ -13,7 +13,7 @@ import { Select } from '@/components/ui/Dropdown'
 import { Modal } from '@/components/ui/Modal'
 import { Card } from '@/components/ui/Card'
 import { formatCurrency, percentOf } from '@/lib/utils'
-import { Plus, TrendingDown, TrendingUp, DollarSign } from 'lucide-react'
+import { Plus, DollarSign } from 'lucide-react'
 
 interface BudgetItem {
   id: string
@@ -113,49 +113,68 @@ export function BudgetClient({
       )}
 
       {!selectedEventId ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border rounded-2xl">
+        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border ">
           <DollarSign className="h-10 w-10 text-muted-foreground/40 mb-4" aria-hidden="true" />
           <p className="text-sm font-medium text-foreground">No event selected</p>
           <p className="text-xs text-muted-foreground mt-1">Select an event above to manage its budget</p>
         </div>
       ) : (
         <>
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-border">
             {[
-              { label: 'Total Budget', value: formatCurrency(summary.planned), icon: <DollarSign className="h-4 w-4" />, variant: 'primary' },
-              { label: 'Spent', value: formatCurrency(summary.actual), icon: <TrendingDown className="h-4 w-4" />, variant: 'warning' },
-              { label: 'Remaining', value: formatCurrency(remaining), icon: <TrendingUp className="h-4 w-4" />, variant: remaining >= 0 ? 'success' : 'error' },
-            ].map((card) => (
-              <div key={card.label} className="bg-card border border-border rounded-2xl p-5 flex items-start gap-4">
-                <div className="shrink-0 p-2.5 bg-primary/8 rounded-xl text-primary" aria-hidden="true">
-                  {card.icon}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{card.label}</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{card.value}</p>
-                </div>
+              { label: 'TOTAL BUDGET', value: formatCurrency(summary.planned) },
+              { label: 'SPENT',        value: formatCurrency(summary.actual) },
+              { label: 'REMAINING',    value: formatCurrency(remaining), color: remaining >= 0 ? 'var(--success)' : 'var(--destructive)' },
+            ].map((card, i) => (
+              <div
+                key={card.label}
+                className="py-7 px-6"
+                style={{ borderRight: i < 2 ? '1px solid var(--border)' : undefined }}
+              >
+                <p
+                  className="text-xs tracking-[0.18em] uppercase text-muted-foreground mb-2"
+                  style={{ fontFamily: 'Courier New, monospace' }}
+                >
+                  {card.label}
+                </p>
+                <p
+                  className="text-3xl sm:text-4xl font-light text-foreground"
+                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', color: card.color ?? 'var(--foreground)' }}
+                >
+                  {card.value}
+                </p>
               </div>
             ))}
           </div>
 
           {/* Progress Bar */}
           {summary.planned > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="border border-border p-5">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-foreground">Budget Utilization</p>
-                <p className="text-sm font-bold text-foreground">{spentPercent}%</p>
+                <p
+                  className="text-xs tracking-[0.15em] uppercase text-muted-foreground"
+                  style={{ fontFamily: 'Courier New, monospace' }}
+                >
+                  BUDGET UTILIZATION
+                </p>
+                <p
+                  className="text-xs text-foreground"
+                  style={{ fontFamily: 'Courier New, monospace' }}
+                >
+                  {spentPercent}%
+                </p>
               </div>
-              <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+              <div className="h-1 bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full transition-all duration-500"
                   style={{
                     width: `${Math.min(spentPercent, 100)}%`,
                     backgroundColor: spentPercent > 90
-                      ? 'hsl(var(--destructive))'
+                      ? 'var(--destructive)'
                       : spentPercent > 70
-                      ? 'hsl(var(--warning))'
-                      : 'hsl(var(--primary))',
+                      ? 'var(--primary)'
+                      : 'var(--success)',
                   }}
                   role="progressbar"
                   aria-valuenow={spentPercent}
@@ -229,7 +248,7 @@ export function BudgetClient({
           })}
 
           {budgetItems.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border rounded-2xl">
+            <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border ">
               <p className="text-sm text-muted-foreground">No budget items yet. Add your first expense.</p>
             </div>
           )}

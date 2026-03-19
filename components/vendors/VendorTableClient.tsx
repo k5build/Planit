@@ -107,7 +107,7 @@ export function VendorTableClient({ vendors, total, page, limit }: VendorTableCl
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search vendors..."
-            className="w-full pl-9 pr-4 h-9 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/55 focus:outline-none focus:ring-2 focus:ring-ring/20"
+            className="w-full pl-9 pr-4 h-9 border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground/55 focus:outline-none focus:border-foreground transition-interactive"
           />
         </div>
         <Button size="sm" onClick={() => setAddOpen(true)}>
@@ -121,7 +121,7 @@ export function VendorTableClient({ vendors, total, page, limit }: VendorTableCl
         {filtered.map((vendor) => (
           <div
             key={vendor.id}
-            className="bg-card border border-border rounded-2xl p-5 hover:border-primary/30 transition-interactive"
+            className="border border-border p-5 hover:border-primary/40 transition-interactive group"
           >
             <div className="flex items-start justify-between mb-3">
               <div>

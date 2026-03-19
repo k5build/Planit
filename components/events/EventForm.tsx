@@ -12,11 +12,9 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Dropdown'
 import { Card } from '@/components/ui/Card'
-import { cn } from '@/lib/utils'
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react'
 
 const STEPS = ['Basics', 'Details', 'Venue & Pricing', 'Publish'] as const
-type Step = (typeof STEPS)[number]
 
 const EVENT_TYPES = [
   { value: 'WEDDING', label: 'Wedding' },
@@ -94,27 +92,33 @@ export function EventForm() {
   return (
     <div className="space-y-6">
       {/* Step indicator */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0 border border-border w-fit">
         {STEPS.map((s, i) => (
-          <div key={s} className="flex items-center gap-1">
-            <div
-              className={cn(
-                'flex items-center justify-center h-7 w-7 rounded-full text-xs font-semibold transition-interactive',
-                i < step
-                  ? 'bg-primary text-primary-foreground'
-                  : i === step
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-muted-foreground border border-border'
-              )}
+          <div
+            key={s}
+            className="flex items-center gap-2.5 px-4 py-2.5 border-r border-border last:border-r-0"
+            style={{
+              backgroundColor: i === step ? 'var(--foreground)' : 'transparent',
+            }}
+          >
+            <span
+              className="text-xs tabular-nums"
+              style={{
+                fontFamily: 'Courier New, monospace',
+                color: i === step ? 'var(--background)' : i < step ? 'var(--primary)' : 'var(--muted-foreground)',
+              }}
             >
-              {i < step ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : i + 1}
-            </div>
-            <span className={cn('text-xs hidden sm:block', i === step ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+              {i < step ? '✓' : String(i + 1).padStart(2, '0')}
+            </span>
+            <span
+              className="text-xs hidden sm:block tracking-[0.1em] uppercase"
+              style={{
+                fontFamily: 'Courier New, monospace',
+                color: i === step ? 'var(--background)' : i < step ? 'var(--foreground)' : 'var(--muted-foreground)',
+              }}
+            >
               {s}
             </span>
-            {i < STEPS.length - 1 && (
-              <div className={cn('h-px w-6 sm:w-10 mx-1', i < step ? 'bg-primary' : 'bg-border')} />
-            )}
           </div>
         ))}
       </div>
@@ -125,8 +129,8 @@ export function EventForm() {
           {step === 0 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-base font-semibold text-foreground">Event Basics</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Name and categorize your event</p>
+                <h2 className="text-xs tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: 'Courier New, monospace' }}>EVENT BASICS</h2>
+                <p className="text-sm text-foreground mt-1" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.1rem' }}>Name and categorize your event</p>
               </div>
               <Input
                 label="Event Title"
@@ -154,8 +158,8 @@ export function EventForm() {
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-base font-semibold text-foreground">Date and Capacity</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">When and how many guests</p>
+                <h2 className="text-xs tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: 'Courier New, monospace' }}>DATE AND CAPACITY</h2>
+                <p className="text-sm text-foreground mt-1" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.1rem' }}>When and how many guests</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
@@ -201,8 +205,8 @@ export function EventForm() {
           {step === 2 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-base font-semibold text-foreground">Venue and Budget</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Financial and location details</p>
+                <h2 className="text-xs tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: 'Courier New, monospace' }}>VENUE AND BUDGET</h2>
+                <p className="text-sm text-foreground mt-1" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.1rem' }}>Financial and location details</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
@@ -240,8 +244,8 @@ export function EventForm() {
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-base font-semibold text-foreground">Publishing Settings</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Control event visibility and status</p>
+                <h2 className="text-xs tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: 'Courier New, monospace' }}>PUBLISHING SETTINGS</h2>
+                <p className="text-sm text-foreground mt-1" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.1rem' }}>Control event visibility and status</p>
               </div>
               <Select
                 label="Visibility"
@@ -258,7 +262,7 @@ export function EventForm() {
               />
 
               {serverError && (
-                <p role="alert" className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
+                <p role="alert" className="text-xs text-destructive border border-destructive/30 px-4 py-3">
                   {serverError}
                 </p>
               )}
