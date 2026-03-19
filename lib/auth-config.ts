@@ -5,6 +5,7 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
+import type { Provider } from 'next-auth/providers'
 import type { Role } from '@prisma/client'
 
 declare module 'next-auth' {
@@ -28,16 +29,21 @@ declare module 'next-auth' {
   }
 }
 
-export const { auth } = NextAuth({
-  secret: process.env.NEXTAUTH_SECRET,
-  session: { strategy: 'jwt' },
-  providers: [
-    Credentials({ credentials: {} }),
+const edgeProviders: Provider[] = [Credentials({ credentials: {} })]
+
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  edgeProviders.push(
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-    }),
-  ],
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    })
+  )
+}
+
+export const { auth } = NextAuth({
+  secret: process.env.NEXTAUTH_SECRET ?? 'dev-secret-change-in-production',
+  session: { strategy: 'jwt' },
+  providers: edgeProviders,
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

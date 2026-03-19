@@ -120,7 +120,7 @@ export default async function LoginPage() {
 
           <hr className="border-border mb-10" />
 
-          <LoginForm />
+          <LoginForm googleEnabled={!!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)} />
 
           <p className="text-xs text-muted-foreground mt-8 text-center">
             No account?{' '}
