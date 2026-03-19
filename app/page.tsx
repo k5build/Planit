@@ -274,12 +274,11 @@ export default async function HomePage() {
         </h2>
         <Link
           href="/register"
-          className="border border-[#FAF8F5] px-10 py-3.5 text-xs tracking-[0.15em] uppercase transition-all duration-200"
+          className="border border-[#FAF8F5] px-10 py-3.5 text-xs tracking-[0.15em] uppercase transition-all duration-200 hover:bg-[#FAF8F5] hover:text-[#0A0908]"
           style={{
             fontFamily: 'Courier New, monospace',
             color: '#FAF8F5',
           }}
-          onMouseOver={() => {}}
         >
           ( BOOK A CONSULTATION )
         </Link>
