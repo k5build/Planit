@@ -5,7 +5,7 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
-import type { Provider } from 'next-auth/providers'
+import type { Provider } from '@auth/core/providers'
 import type { Role } from '@prisma/client'
 
 declare module 'next-auth' {
