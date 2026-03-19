@@ -1,0 +1,684 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  PLANNER
+  CLIENT
+  VENDOR
+  GUEST
+  FINANCE
+  MARKETING
+  OPERATIONS
+  SUPPORT
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+enum EventType {
+  WEDDING
+  CORPORATE
+  BIRTHDAY
+  CONFERENCE
+  EXHIBITION
+  GALA
+  WORKSHOP
+  PRIVATE
+  OTHER
+}
+
+enum EventVisibility {
+  PUBLIC
+  PRIVATE
+  UNLISTED
+}
+
+enum RSVPStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+  WAITLISTED
+  NO_SHOW
+}
+
+enum VendorCategory {
+  CATERING
+  PHOTOGRAPHY
+  VIDEOGRAPHY
+  MUSIC
+  FLORIST
+  DECORATION
+  LIGHTING
+  AUDIO_VISUAL
+  TRANSPORTATION
+  SECURITY
+  CLEANING
+  ENTERTAINMENT
+  VENUE
+  OFFICIANT
+  STATIONERY
+  OTHER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum ContractStatus {
+  DRAFT
+  SENT
+  SIGNED
+  EXPIRED
+  CANCELLED
+}
+
+enum BudgetCategory {
+  VENUE
+  CATERING
+  MUSIC
+  PHOTOGRAPHY
+  FLORIST
+  DECORATION
+  TRANSPORTATION
+  STAFFING
+  MARKETING
+  PRINTING
+  TECHNOLOGY
+  MISCELLANEOUS
+}
+
+enum MessageType {
+  INTERNAL
+  CLIENT
+  VENDOR
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum TicketStatus {
+  ACTIVE
+  SOLD_OUT
+  EXPIRED
+  CANCELLED
+}
+
+enum CheckInMethod {
+  QR
+  MANUAL
+  NFC
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  emailHash      String?   @unique
+  passwordHash   String?
+  nameEncrypted  String?
+  phoneEncrypted String?
+  phoneHash      String?
+  role           Role      @default(GUEST)
+  tokenVersion   Int       @default(0)
+  totpSecret     String?
+  totpEnabled    Boolean   @default(false)
+  avatarUrl      String?
+  isActive       Boolean   @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  plannerEvents  Event[]       @relation("EventPlanner")
+  clientEvents   Event[]       @relation("EventClient")
+  tasks          Task[]
+  messages       Message[]     @relation("MessageSender")
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+  vendorProfile  Vendor?
+  guestProfile   Guest?
+  invoices       Invoice[]     @relation("InvoiceClient")
+  documents      Document[]
+  proposals      Proposal[]
+  campaignLinks  CampaignLink[]
+  checkIns       CheckIn[]     @relation("CheckInOperator")
+  surveyResponses FeedbackResponse[]
+
+  @@map("users")
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  website     String?
+  phone       String?
+  addressEncrypted String?
+  brandColor  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  events      Event[]
+  vendors     Vendor[]
+
+  @@map("organizations")
+}
+
+model Event {
+  id              String          @id @default(cuid())
+  title           String
+  slug            String          @unique
+  description     String?
+  type            EventType       @default(OTHER)
+  status          EventStatus     @default(DRAFT)
+  visibility      EventVisibility @default(PRIVATE)
+  startDate       DateTime
+  endDate         DateTime
+  timezone        String          @default("UTC")
+  maxCapacity     Int?
+  expectedGuests  Int?
+  budgetTotal     Float?
+  currency        String          @default("USD")
+  coverImageUrl   String?
+  bannerImageUrl  String?
+  tags            String?
+  metaTitle       String?
+  metaDescription String?
+  isTemplate      Boolean         @default(false)
+  templateId      String?
+
+  organizationId  String?
+  organization    Organization?   @relation(fields: [organizationId], references: [id])
+  plannerId       String
+  planner         User            @relation("EventPlanner", fields: [plannerId], references: [id])
+  clientId        String?
+  client          User?           @relation("EventClient", fields: [clientId], references: [id])
+  venueId         String?
+  venue           Venue?          @relation(fields: [venueId], references: [id])
+
+  guests          Guest[]
+  tickets         Ticket[]
+  budgetItems     BudgetItem[]
+  tasks           Task[]
+  vendors         EventVendor[]
+  documents       Document[]
+  messages        Message[]
+  floorPlans      FloorPlan[]
+  checkIns        CheckIn[]
+  invoices        Invoice[]
+  contracts       Contract[]
+  proposals       Proposal[]
+  surveys         Survey[]
+  campaignLinks   CampaignLink[]
+  notifications   Notification[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("events")
+}
+
+model EventTemplate {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        EventType
+  structure   String
+  coverUrl    String?
+  isPublic    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("event_templates")
+}
+
+model Venue {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  description     String?
+  addressEncrypted String?
+  city            String?
+  country         String?
+  capacity        Int?
+  indoorCapacity  Int?
+  outdoorCapacity Int?
+  pricePerHour    Float?
+  pricePerDay     Float?
+  currency        String    @default("USD")
+  amenities       String?
+  imageUrls       String?
+  contactName     String?
+  contactEmailEncrypted String?
+  contactPhoneEncrypted String?
+  isActive        Boolean   @default(true)
+  rating          Float?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  events          Event[]
+  availability    VenueAvailability[]
+
+  @@map("venues")
+}
+
+model VenueAvailability {
+  id        String   @id @default(cuid())
+  venueId   String
+  venue     Venue    @relation(fields: [venueId], references: [id])
+  date      DateTime
+  isBlocked Boolean  @default(false)
+  note      String?
+
+  @@map("venue_availability")
+}
+
+model Vendor {
+  id              String         @id @default(cuid())
+  userId          String?        @unique
+  user            User?          @relation(fields: [userId], references: [id])
+  organizationId  String?
+  organization    Organization?  @relation(fields: [organizationId], references: [id])
+  name            String
+  category        VendorCategory
+  description     String?
+  website         String?
+  emailEncrypted  String?
+  emailHash       String?
+  phoneEncrypted  String?
+  phoneHash       String?
+  addressEncrypted String?
+  logoUrl         String?
+  portfolioUrls   String?
+  priceRangeMin   Float?
+  priceRangeMax   Float?
+  currency        String         @default("USD")
+  rating          Float?
+  reviewCount     Int            @default(0)
+  isVerified      Boolean        @default(false)
+  isActive        Boolean        @default(true)
+  tags            String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  eventVendors    EventVendor[]
+  contracts       Contract[]
+  invoices        Invoice[]      @relation("VendorInvoices")
+
+  @@map("vendors")
+}
+
+model EventVendor {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id])
+  vendorId    String
+  vendor      Vendor   @relation(fields: [vendorId], references: [id])
+  role        String?
+  fee         Float?
+  currency    String   @default("USD")
+  notes       String?
+  confirmedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@unique([eventId, vendorId])
+  @@map("event_vendors")
+}
+
+model Guest {
+  id               String     @id @default(cuid())
+  eventId          String
+  event            Event      @relation(fields: [eventId], references: [id])
+  userId           String?    @unique
+  user             User?      @relation(fields: [userId], references: [id])
+  firstNameEncrypted String?
+  lastNameEncrypted  String?
+  emailEncrypted     String?
+  emailHash          String?
+  phoneEncrypted     String?
+  phoneHash          String?
+  rsvpStatus       RSVPStatus @default(PENDING)
+  rsvpToken        String?    @unique
+  dietaryNeeds     String?
+  accessNeeds      String?
+  plusOnes         Int        @default(0)
+  tableNumber      String?
+  seatNumber       String?
+  qrCode           String?    @unique
+  tags             String?
+  notes            String?
+  invitedAt        DateTime?
+  rsvpAt           DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  checkIns         CheckIn[]
+  ticketId         String?
+  ticket           Ticket?    @relation(fields: [ticketId], references: [id])
+
+  @@map("guests")
+}
+
+model Ticket {
+  id            String       @id @default(cuid())
+  eventId       String
+  event         Event        @relation(fields: [eventId], references: [id])
+  name          String
+  description   String?
+  price         Float        @default(0)
+  currency      String       @default("USD")
+  quantity      Int?
+  sold          Int          @default(0)
+  status        TicketStatus @default(ACTIVE)
+  saleStartAt   DateTime?
+  saleEndAt     DateTime?
+  promoCode     String?
+  promoDiscount Float?
+  isTransferable Boolean     @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  guests        Guest[]
+
+  @@map("tickets")
+}
+
+model BudgetItem {
+  id          String         @id @default(cuid())
+  eventId     String
+  event       Event          @relation(fields: [eventId], references: [id])
+  category    BudgetCategory
+  name        String
+  description String?
+  planned     Float
+  actual      Float?
+  currency    String         @default("USD")
+  paidAt      DateTime?
+  vendorId    String?
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("budget_items")
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  eventId     String?
+  event       Event?        @relation(fields: [eventId], references: [id])
+  clientId    String
+  client      User          @relation("InvoiceClient", fields: [clientId], references: [id])
+  vendorId    String?
+  vendor      Vendor?       @relation("VendorInvoices", fields: [vendorId], references: [id])
+  number      String        @unique
+  status      InvoiceStatus @default(DRAFT)
+  subtotal    Float
+  tax         Float         @default(0)
+  discount    Float         @default(0)
+  total       Float
+  currency    String        @default("USD")
+  dueDate     DateTime?
+  paidAt      DateTime?
+  notes       String?
+  stripePaymentIntentId String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  lineItems   InvoiceLineItem[]
+
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Float
+  total       Float
+
+  @@map("invoice_line_items")
+}
+
+model Contract {
+  id          String         @id @default(cuid())
+  eventId     String?
+  event       Event?         @relation(fields: [eventId], references: [id])
+  vendorId    String?
+  vendor      Vendor?        @relation(fields: [vendorId], references: [id])
+  title       String
+  content     String
+  status      ContractStatus @default(DRAFT)
+  signedAt    DateTime?
+  signatureData String?
+  expiresAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("contracts")
+}
+
+model Proposal {
+  id          String   @id @default(cuid())
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id])
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  title       String
+  content     String
+  totalValue  Float?
+  currency    String   @default("USD")
+  sentAt      DateTime?
+  viewedAt    DateTime?
+  acceptedAt  DateTime?
+  declinedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("proposals")
+}
+
+model Task {
+  id           String       @id @default(cuid())
+  eventId      String?
+  event        Event?       @relation(fields: [eventId], references: [id])
+  assignedToId String?
+  assignedTo   User?        @relation(fields: [assignedToId], references: [id])
+  parentId     String?
+  parent       Task?        @relation("TaskChildren", fields: [parentId], references: [id])
+  children     Task[]       @relation("TaskChildren")
+  title        String
+  description  String?
+  status       TaskStatus   @default(TODO)
+  priority     TaskPriority @default(MEDIUM)
+  dueDate      DateTime?
+  completedAt  DateTime?
+  order        Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("tasks")
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  eventId      String?
+  event        Event?   @relation(fields: [eventId], references: [id])
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  name         String
+  fileUrl      String
+  fileSize     Int?
+  mimeType     String?
+  category     String?
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@map("documents")
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  eventId     String?
+  event       Event?      @relation(fields: [eventId], references: [id])
+  senderId    String
+  sender      User        @relation("MessageSender", fields: [senderId], references: [id])
+  type        MessageType @default(INTERNAL)
+  subject     String?
+  body        String
+  isRead      Boolean     @default(false)
+  parentId    String?
+  createdAt   DateTime    @default(now())
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  eventId   String?
+  event     Event?           @relation(fields: [eventId], references: [id])
+  type      NotificationType @default(INFO)
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  actionUrl String?
+  createdAt DateTime         @default(now())
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String?
+  entityId  String?
+  metadata  String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model FloorPlan {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id])
+  name      String
+  data      String
+  version   Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("floor_plans")
+}
+
+model CheckIn {
+  id          String        @id @default(cuid())
+  eventId     String
+  event       Event         @relation(fields: [eventId], references: [id])
+  guestId     String
+  guest       Guest         @relation(fields: [guestId], references: [id])
+  operatorId  String?
+  operator    User?         @relation("CheckInOperator", fields: [operatorId], references: [id])
+  method      CheckInMethod @default(MANUAL)
+  checkedInAt DateTime      @default(now())
+  notes       String?
+
+  @@map("check_ins")
+}
+
+model Survey {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id])
+  title       String
+  questions   String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  responses   FeedbackResponse[]
+
+  @@map("surveys")
+}
+
+model FeedbackResponse {
+  id          String   @id @default(cuid())
+  surveyId    String
+  survey      Survey   @relation(fields: [surveyId], references: [id])
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  answers     String
+  rating      Int?
+  submittedAt DateTime @default(now())
+
+  @@map("feedback_responses")
+}
+
+model CampaignLink {
+  id          String   @id @default(cuid())
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id])
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  name        String
+  slug        String   @unique
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  clicks      Int      @default(0)
+  conversions Int      @default(0)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@map("campaign_links")
+}
