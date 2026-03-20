@@ -1,0 +1,16 @@
+import path from 'node:path'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
+
+const dbPath = path.join(process.cwd(), 'prisma', 'dev.db')
+
+// Using plain object config to avoid TS issues with earlyAccess field in Prisma 7
+module.exports = {
+  earlyAccess: true,
+  schema: path.join('prisma', 'schema.prisma'),
+  datasource: {
+    url: `file:${dbPath}`,
+  },
+  migrate: {
+    adapter: () => new PrismaLibSql({ url: `file:${dbPath}` }),
+  },
+}
