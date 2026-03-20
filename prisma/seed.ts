@@ -4,8 +4,16 @@ import bcrypt from 'bcryptjs'
 import { createHmac, randomBytes, createCipheriv } from 'crypto'
 import path from 'node:path'
 
-const dbPath = path.join(process.cwd(), 'prisma', 'dev.db')
-const adapter = new PrismaLibSql({ url: `file:${dbPath}` })
+const isTurso = !!process.env.DATABASE_AUTH_TOKEN
+const dbUrl = isTurso
+  ? process.env.DATABASE_URL!
+  : `file:${path.join(process.cwd(), 'prisma', 'dev.db')}`
+
+const adapter = new PrismaLibSql(
+  isTurso
+    ? { url: dbUrl, authToken: process.env.DATABASE_AUTH_TOKEN }
+    : { url: dbUrl }
+)
 const db = new PrismaClient({ adapter })
 
 const ENCRYPTION_KEY_HEX = '0000000000000000000000000000000000000000000000000000000000000001'
