@@ -39,10 +39,10 @@ export default function RootLayout({
         {/* Preconnect for Google Fonts performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Dark mode: set class before first paint to prevent flash */}
+        {/* Default dark mode — apply unless user explicitly chose light */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('ef_theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem('ef_theme');if(t==='light'){return;}document.documentElement.classList.add('dark')}catch(e){document.documentElement.classList.add('dark')}})()`,
           }}
         />
       </head>

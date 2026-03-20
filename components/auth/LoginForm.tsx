@@ -9,7 +9,7 @@ import { loginSchema, type LoginInput } from '@/lib/validations/auth'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function LoginForm({ googleEnabled = false }: { googleEnabled?: boolean }) {
@@ -18,6 +18,7 @@ export function LoginForm({ googleEnabled = false }: { googleEnabled?: boolean }
   const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard'
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState('')
+  const [demoLoading, setDemoLoading] = useState(false)
 
   const {
     register,
@@ -41,6 +42,23 @@ export function LoginForm({ googleEnabled = false }: { googleEnabled?: boolean }
     }
 
     router.push(callbackUrl)
+    router.refresh()
+  }
+
+  async function handleDemo() {
+    setDemoLoading(true)
+    setServerError('')
+    const result = await signIn('credentials', {
+      email: 'admin@eventflow.com',
+      password: 'Demo1234!',
+      redirect: false,
+    })
+    if (result?.error) {
+      setServerError('Demo login failed. Please try the credentials manually.')
+      setDemoLoading(false)
+      return
+    }
+    router.push('/dashboard')
     router.refresh()
   }
 
@@ -137,6 +155,29 @@ export function LoginForm({ googleEnabled = false }: { googleEnabled?: boolean }
           Create one
         </Link>
       </p>
+
+      {/* Demo access */}
+      <div className="mt-8 pt-6 border-t border-border">
+        <p
+          className="text-xs tracking-[0.15em] uppercase text-muted-foreground mb-4 text-center"
+          style={{ fontFamily: 'Courier New, monospace' }}
+        >
+          OR EXPLORE THE DEMO
+        </p>
+        <button
+          type="button"
+          onClick={handleDemo}
+          disabled={demoLoading}
+          className="w-full border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 h-10 px-7 text-[0.7rem] tracking-[0.15em] uppercase flex items-center justify-center gap-2 disabled:opacity-40"
+          style={{ fontFamily: 'Courier New, monospace' }}
+        >
+          {demoLoading && <Loader2 className="h-3 w-3 animate-spin shrink-0" />}
+          ( CONTINUE AS GUEST )
+        </button>
+        <p className="text-center text-xs text-muted-foreground mt-3" style={{ fontFamily: 'Courier New, monospace' }}>
+          Full access · No signup required
+        </p>
+      </div>
     </form>
   )
 }
